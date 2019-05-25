@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <queue>
 #include <cstring>
 
 typedef unsigned char uchar;
@@ -104,35 +105,29 @@ void decompress(char *input, char *output) {
 	}
 
     char c;
-	size_t v = 0, rem = 0, hei = 0;
+	size_t v = 0;
+	std::queue<char> g;
     while (can()) {
 		c = read();
-		rem = 8;
-		for (char o : bits(c)) {
-			o -= 48;
+		for (char o : bits(c))
+			g.push(o);
+		while (g.size() > ost) {
+			size_t o = g.front() - 48;
+			g.pop();
 			if (e[v][o] < 0) {
 				print(uchar(-e[v][o] - 1));
 				v = 0;
-				hei = 0;
 			}
 			if (e[v][o] == 0) {
+				throw std::runtime_error("Compressed file was damaged.\n");
 				break;
 			}
 			v = e[v][o];
-			hei++;
-			rem--;
 		}
-		if (rem != 0)
-			break;
     }
 
-	if (e[v][0] < 0) {
+	if (e[v][0] < 0)
 		print(uchar(-e[v][0] - 1));
-		hei = rem = 0;
-	}
-
-    if (rem + hei != (size_t) ost)
-        throw std::runtime_error("Compressed file was damaged.\n");
 
 	finish();
 

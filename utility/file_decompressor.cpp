@@ -1,10 +1,19 @@
 #include "../lib/compress_lib.h"
 #include "utility.h"
+#include <cassert>
+#include <map>
+#include <vector>
+#include <string>
+#include <cstring>
+
+typedef unsigned char uchar;
+
+typedef uint32_t uint;
 
 std::string bits(char t) {
     std::string answ = "";
     for (size_t i = 0; i < 8; i++) {
-        answ += (char) ('0' + (t & 1));
+        answ += (char) (48 + (t & 1));
         t >>= 1;
     }
     std::reverse(answ.begin(), answ.end());
@@ -12,103 +21,120 @@ std::string bits(char t) {
 }
 
 void decompress(char *input, char *output) {
-    uint32_t cnt[256];
+    uint cnt[256] = {};
 
     std::ifstream fin(input);
-
-    if (fin.fail()) {
-        throw std::runtime_error("Something went wrong with input file.\n");
-    }
-
-    // fast reading of cnt array
-    unsigned char buf[1024];
-
-    fin.read((char *) buf, sizeof(buf));
-
-    if (fin.gcount() != 1024) {
-        throw std::runtime_error("Input file was damaged. Not enough data to restore cnt array");
-    }
-    // end of fast reading
-
-    char ost;
-    fin >> ost;
-
     std::ofstream fout(output);
 
-    if (fout.fail()) {
-        throw std::runtime_error("Something went wrong with output file.\n");
+    if (fin.fail() || fout.fail()) {
+        throw std::runtime_error("Something went wrong with input/output file.\n");
     }
 
-    for (size_t i = 0; i < 1024; i += 4) {
-        cnt[i >> 2] = buf[i + 3] | (buf[i + 2] << 8) | (buf[i + 1] << 16) | (buf[i] << 24);
-    }
+    char buf[1024], ubuf[1024];
+    
+    fin.read((char *)buf, sizeof(buf));
+
+	size_t upos = 0, pos = 0, len = fin.gcount();
+	
+	auto can = [&]() {
+		return pos < len;
+	};
+	
+	auto read = [&]() {
+		assert(can());
+		char w = buf[pos++];
+		if (pos == len) {
+			fin.read(buf, sizeof(buf));
+			len = fin.gcount();
+			pos = 0;
+		}
+		return uchar(w);
+	};
+
+	auto clear = [&]() {
+		pos = 0;
+		fin.clear();
+		fin.seekg(0, std::ios::beg);
+		fin.read(buf, sizeof(buf));
+		len = fin.gcount();
+	};
+    
+	auto print = [&](char w) {
+		ubuf[upos++] = w;
+		if (upos == 1024) {
+			fout.write(ubuf, upos);
+			upos = 0;
+		}
+	};
+	
+	auto finish = [&]() {
+		if (upos > 0)
+			fout.write(ubuf, upos);
+	};
+	
+	for (size_t i = 0; i < 256; i++) {
+		uint w = read();
+		if (w == 255) {
+			cnt[i] = 0;
+		} else {
+			for (char j = 1; j < 4; j++) {
+				w = (w << 8) + read();
+			}
+			cnt[i] = w;
+		}
+	}
+
+    char ost;
+    ost = read();
 
     std::vector<std::string> t = get_codes(cnt);
 
-    std::map<std::string, std::pair<bool, char>> ht;
+	int32_t e[512][2], sz = 1;
 
-    for (size_t i = 0; i < t.size(); i++) {
-        ht[t[i]] = {true, i};
-    }
+	memset(e, 0, sizeof(e));
+	for (size_t it = 0; it < t.size(); it++) {
+		size_t w = 0;
+		for (char c : t[it]) {
+			c -= 48;
+			if (e[w][c] == 0)
+				e[w][c] = sz++;
+			w = e[w][c];
+		}
+		e[w][0] = e[w][1] = -1 - it;
+	}
 
     char c;
-    std::string cur_buf = "";
-    while (fin.get(c)) {
-        cur_buf += bits(c);
-        while (cur_buf.size() > (size_t) ost) {
-            std::string tmp = "";
-            size_t p = 0;
-            bool ok = false;
-            for (size_t i = 0; i < cur_buf.size(); i++) {
-                tmp += cur_buf[i];
-                if (ht[tmp].first) {
-                    ok = true;
-                    p = i + 1;
-                    break;
-                }
-            }
-
-            if (!ok) {
-                break;
-            }
-
-            fout << ht[tmp].second;
-            tmp = "";
-            for (; p < cur_buf.size(); p++) {
-                tmp += cur_buf[p];
-            }
-            cur_buf = tmp;
-        }
-        if (cur_buf.size() > 512) {
-            throw std::runtime_error("Compressed file was damaged.\n");
-        }
+	size_t v = 0, rem = 0, hei = 0;
+    while (can()) {
+		c = read();
+		rem = 8;
+		for (char o : bits(c)) {
+			o -= 48;
+			if (e[v][o] < 0) {
+				print(uchar(-e[v][o] - 1));
+				v = 0;
+				hei = 0;
+			}
+			if (e[v][o] == 0) {
+				break;
+			}
+			v = e[v][o];
+			hei++;
+			rem--;
+		}
+		if (rem != 0)
+			break;
     }
 
-    while (cur_buf.size() > (size_t) ost) {
-        std::string tmp = "";
-        size_t p = 0;
-        bool ok = false;
-        for (size_t i = 0; i < cur_buf.size(); i++) {
-            tmp += cur_buf[i];
-            if (ht[tmp].first) {
-                ok = true;
-                p = i + 1;
-                break;
-            }
-        }
+	if (e[v][0] < 0) {
+		print(uchar(-e[v][0] - 1));
+		hei = rem = 0;
+	}
 
-        if (!ok) {
-            break;
-        }
-        fout << ht[tmp].second;
-        tmp = "";
-        for (; p < cur_buf.size(); p++) {
-            tmp += cur_buf[p];
-        }
-        cur_buf = tmp;
-    }
-
-    if (cur_buf.size() != (size_t) ost) {
+    if (rem + hei != (size_t) ost)
         throw std::runtime_error("Compressed file was damaged.\n");
-    }
+
+	finish();
+
+	std::cerr << "Done decompressing\n";
 }

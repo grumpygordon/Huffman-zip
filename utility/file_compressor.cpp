@@ -1,8 +1,14 @@
 #include "../lib/compress_lib.h"
 #include "utility.h"
+#include <cassert>
+#include <vector>
+#include <string>
+
+typedef uint32_t uint;
+typedef unsigned char uchar;
 
 void compress(char *input, char *output) {
-    uint32_t cnt[256] = {};
+    uint cnt[256] = {};
 
     std::ifstream fin(input);
     std::ofstream fout(output);
@@ -11,91 +17,106 @@ void compress(char *input, char *output) {
         throw std::runtime_error("Something went wrong with input/output file.\n");
     }
 
-    // fast counting
-    unsigned char buf[1024];
-    uint32_t count[8][256] = {};
+    char buf[1024], ubuf[1024];
+    
+    fin.read((char *)buf, sizeof(buf));
 
-    while (fin) {
-        fin.read((char *) buf, sizeof(buf));
-        size_t s = (size_t) fin.gcount() / 8 * 8;
-        for (size_t i = 0; i < s;) {
-            ++count[0][buf[i++]];
-            ++count[1][buf[i++]];
-            ++count[2][buf[i++]];
-            ++count[3][buf[i++]];
-            ++count[4][buf[i++]];
-            ++count[5][buf[i++]];
-            ++count[6][buf[i++]];
-            ++count[7][buf[i++]];
-        }
-        for (; s < fin.gcount(); s++) {
-            cnt[buf[s]]++;
-        }
+	size_t upos = 0, pos = 0, len = fin.gcount();
+	
+	auto can = [&]() {
+		return pos < len;
+	};
+	
+	auto read = [&]() {
+		assert(can());
+		char w = buf[pos++];
+		if (pos == len) {
+			fin.read(buf, sizeof(buf));
+			len = fin.gcount();
+			pos = 0;
+		}
+		return uchar(w);
+	};
+
+	auto clear = [&]() {
+		pos = 0;
+		fin.clear();
+		fin.seekg(0, std::ios::beg);
+		fin.read(buf, sizeof(buf));
+		len = fin.gcount();
+	};
+    
+	auto print = [&](char w) {
+		ubuf[upos++] = w;
+		if (upos == 1024) {
+			fout.write(ubuf, upos);
+			upos = 0;
+		}
+	};
+	
+	auto finish = [&]() {
+		if (upos > 0)
+			fout.write(ubuf, upos);
+	};
+
+    while (can()) {
+		cnt[read()]++;
+	}
+
+	clear();
+	
+	const uchar big = 255;
+	
+	const uint flag = uint(big) << 24; 
+
+    for (size_t i = 0; i < 256; i++) {
+		uint w = cnt[i];
+		assert(w < flag);
+        if (w == 0) {
+			print(big);
+			continue;
+		}
+		for (signed char j = 3; j >= 0; j--) {
+			uchar o = (w >> (8 * j));
+			print(o);
+			w -= uint(o) << (8 * j);
+		}
     }
-
-    for (size_t i = 0; i < 8; i++) {
-        for (size_t j = 0; j < 256; j++) {
-            cnt[j] += count[i][j];
-        }
-    }
-    // end of fast counting
-
-    // put fin to start of file
-    fin.clear();
-    fin.seekg(0, std::ios::beg);
-
-    const std::bitset<32> mask = (1 << 8) - 1;
-
-    for (uint i = 0; i < 256; i++) {
-        std::bitset<32> tmp = cnt[i];
-        char a, b, c, d;
-        d = (char) ((tmp & mask).to_ulong());
-        c = (char) ((tmp & (mask << 8)).to_ulong() >> 8);
-        b = (char) ((tmp & (mask << 16)).to_ulong() >> 16);
-        a = (char) ((tmp & (mask << 24)).to_ulong() >> 24);
-        fout << a << b << c << d;
-    }
-
     std::vector<std::string> t = get_codes(cnt);
 
-    // count last bits
-    uint32_t len = 0, ost = 0;
+    uint lens = 0, ost = 0;
     for (size_t i = 0; i < 256; i++) {
-        len += cnt[i] * t[i].size();
+        lens += cnt[i] * t[i].size();
     }
-    ost = (len % 8 ? 8 - len % 8 : 0);
-    fout << (char) ost;
-    // end of counting last bits
+    ost = (lens % 8 ? 8 - lens % 8 : 0);
+	print(ost);
 
     std::string cur_buf = "";
 
-    while (fin) {
-        fin.read((char *) buf, sizeof(buf));
-        for (size_t i = 0; i < (size_t) fin.gcount(); i++) {
-            cur_buf += t[buf[i]];
-            if (cur_buf.size() >= 8) {
-                for (size_t i = 0; i < cur_buf.size() / 8 * 8; i += 8) {
-                    char v = 0;
-                    for (size_t j = i; j < i + 8; j++) {
-                        v = (v << 1) | (cur_buf[j] - '0');
-                    }
-                    fout << v;
-                }
-
-                std::string tmp = "";
-                for (size_t i = cur_buf.size() / 8 * 8; i < cur_buf.size(); i++) {
-                    tmp += cur_buf[i];
-                }
-                cur_buf = tmp;
-            }
-        }
+    while (can()) {
+        uchar w = read();
+		cur_buf += t[w];
+		if (cur_buf.size() >= 8) {
+			size_t i = 0;
+			for (; i + 7 < cur_buf.size(); i += 8) {
+				char v = 0;
+				for (size_t j = i; j < i + 8; j++) {
+					v = (v << 1) ^ (cur_buf[j] & 1);
+				}
+				print(v);
+			}
+			cur_buf = cur_buf.substr(i, cur_buf.size() - i);
+		}
     }
+
     if (ost) {
         char c;
         for (size_t j = 0; j < 8 - ost; j++) {
-            c = (c << 1) | (cur_buf[j] - '0');
+            c = (c << 1) ^ (cur_buf[j] & 1);
         }
         c <<= ost;
-        fout << c;
+        print(c);
     }
+	finish();
+	std::cerr << "Done compressing\n";
 }

@@ -22,7 +22,7 @@ void finish_test() {
 
 void pre_verdict(bool answ) {
     if (answ) {
-        // std::cout << "[    OK]\n";
+        std::cout << "[    OK]\n";
         pre_ac++;
     } else {
         std::cerr << "[FAILED] Test #" << test_num << "\n";

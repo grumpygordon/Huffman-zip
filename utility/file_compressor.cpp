@@ -1,8 +1,6 @@
 #include "../lib/compress_lib.h"
 #include "utility.h"
 #include <cassert>
-#include <vector>
-#include <string>
 
 typedef uint32_t uint;
 typedef unsigned char uchar;
@@ -110,7 +108,7 @@ void compress(char *input, char *output) {
     }
 
     if (ost) {
-        char c;
+        uchar c;
         for (size_t j = 0; j < 8 - ost; j++) {
             c = (c << 1) ^ (cur_buf[j] & 1);
         }

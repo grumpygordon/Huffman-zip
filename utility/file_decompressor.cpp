@@ -118,16 +118,16 @@ void decompress(char *input, char *output) {
 				print(uchar(-e[v][o] - 1));
 				v = 0;
 			}
-			if (e[v][o] == 0) {
+			if (e[v][o] == 0)
 				throw std::runtime_error("Compressed file was damaged.\n");
-				break;
-			}
 			v = e[v][o];
 		}
     }
 
 	if (e[v][0] < 0)
 		print(uchar(-e[v][0] - 1));
+	if (ost != g.size())
+		throw std::runtime_error("Compressed file was damaged.\n");
 
 	finish();
 

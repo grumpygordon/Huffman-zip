@@ -11,8 +11,11 @@ void compress(char *input, char *output) {
     std::ifstream fin(input);
     std::ofstream fout(output);
 
-    if (fin.fail() || fout.fail()) {
-        throw std::runtime_error("Something went wrong with input/output file.\n");
+    if (fin.fail()) {
+        throw std::runtime_error("Couldn't open input file.\n");
+    }
+    if (fout.fail()) {
+        throw std::runtime_error("Couldn't open output file.\n");
     }
 
     char buf[1024], ubuf[1024];

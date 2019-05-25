@@ -136,5 +136,5 @@ void decompress(char *input, char *output) {
 
 	finish();
 
-	std::cerr << "Done decompressing\n";
+	//std::cerr << "Done decompressing\n";
 }

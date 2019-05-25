@@ -118,5 +118,5 @@ void compress(char *input, char *output) {
         print(c);
     }
 	finish();
-	std::cerr << "Done compressing\n";
+	//std::cerr << "Done compressing\n";
 }

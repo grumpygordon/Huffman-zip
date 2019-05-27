@@ -1,3 +1,0 @@
-/home/ramazan/cpp-course/Huffman-zip/CMakeFiles/rebuild_cache.dir
-/home/ramazan/cpp-course/Huffman-zip/CMakeFiles/huflib.dir
-/home/ramazan/cpp-course/Huffman-zip/CMakeFiles/edit_cache.dir

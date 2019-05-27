@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
-#include "lib/compress_lib.h"
+#include "lib/huffman_lib.h"
 
 void test();
 

@@ -2,6 +2,8 @@
 #include "compress_testing.h"
 #include "utility/utility.h"
 #include <numeric>
+#include <algorithm>
+
 char *input = (char *) ("input.txt");
 char *tmp = (char *) ("compressed.txt");
 char *res = (char *) ("decompressed.txt");
@@ -54,8 +56,8 @@ bool check_test(bool small = false) {
 
     auto start_time = clock();
 
-    compress(input, tmp);
-    decompress(tmp, res);
+    encode(input, tmp);
+    decode(tmp, res);
 
     double test_time = (clock() - start_time);
     std::ifstream fin(res);

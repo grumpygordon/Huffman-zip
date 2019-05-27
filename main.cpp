@@ -2,7 +2,6 @@
 #include <fstream>
 #include <cstring>
 #include <ctime>
-#include "lib/compress_lib.h"
 #include "compress_testing.h"
 #include "utility/utility.h"
 
@@ -36,9 +35,9 @@ int main(int argc, char *argv[]) {
 
     try {
         if (mode == 1) {
-            compress(argv[2], argv[3]);
+            encode(argv[2], argv[3]);
         } else {
-            decompress(argv[2], argv[3]);
+            decode(argv[2], argv[3]);
         }
     } catch (const std::exception &ex) {
         std::cout << ex.what();

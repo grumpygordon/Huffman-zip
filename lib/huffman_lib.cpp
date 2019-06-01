@@ -178,11 +178,6 @@ void Huffman::decode_tree(char *input, size_t n, char* output, size_t &m) {
 			error("not enough data to restore the tree, maybe file was damaged");
 		return uchar(input[ipos++]);
 	};
-
-	auto print = [&](char w) {
-		assert(m < OSZ);
-		output[m++] = w;
-	};
 	
 	for (size_t i = 0; i < 256; i++) {
 		uint w = read();

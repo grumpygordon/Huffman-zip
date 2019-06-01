@@ -5,13 +5,16 @@
 #include <stdexcept>
 #include <cassert>
 
+typedef unsigned char uchar;
+
+typedef uint32_t uint;
+
 Huffman::Huffman() {
 	memset(cnt, 0, sizeof(cnt));
 	memset(e, 0, sizeof(e));
-	for (size_t i = 0; i < SZ; i++) {
-		t[i] = "";
-	}
-	srem = "";
+	memset(tlen, 0, sizeof(tlen));
+	memset(t, 0, sizeof(t));
+	srem = rlen = 0;
 	cur_v = 0;
 }
 
@@ -34,34 +37,51 @@ void Huffman::get_codes() {
     std::vector<std::pair<uint, std::vector<uchar> > > g;
 
     size_t it = 0;
+
+	std::string arr[SZ];
+
+	for (size_t i = 0; i < SZ; i++)
+		arr[i] = "";
+
+    auto add = [&](size_t i, bool ts) {
+		arr[i].push_back(size_t(ts) + 48);
+	};
     
     for (size_t i = 0; i <= SZ; i++) {
         while (it + 1 < g.size() && (i == SZ || q[i].first > g[it + 1].first)) {
             g.push_back({g[it].first + g[it + 1].first, {}});
             for (uchar j = 0; j < 2; j++)
                 for (uchar id : g[it + j].second)
-                    t[id].push_back(48 + j);
+                    add(id, j);
             concat(g.back().second, g[it].second);
             concat(g.back().second, g[it + 1].second);
             it += 2;
         }
         if (i + 1 < SZ && (it == g.size() || g[it].first > q[i + 1].first)) {
             g.push_back({q[i].first + q[i + 1].first, {q[i].second, q[i + 1].second}});
-            t[q[i].second].push_back(48);
-            t[q[i + 1].second].push_back(49);
+			add(q[i].second, 0);
+			add(q[i + 1].second, 1);
             i++;
         } else if (i < SZ && it < g.size()) {
 			g.push_back(g[it]);
             for (uchar id : g.back().second)
-                t[id].push_back(48);
-			t[q[i].second].push_back(49);
+				add(id, 0);
+			add(q[i].second, 1);
             g.back().second.push_back(q[i].second);
             g.back().first += q[i].first;
             it++;
         }
     }
-    for (size_t i = 0; i < SZ; i++)
-        std::reverse(t[i].begin(), t[i].end());
+    for (size_t i = 0; i < SZ; i++) {
+		std::string s = arr[i];
+		std::reverse(s.begin(), s.end());
+		for (char c : s) {
+			bool ts = (c & 1);
+			if (ts)
+				t[i][tlen[i] >> 3] ^= (1 << ((tlen[i] & 7) ^ 7));
+			tlen[i]++;
+		}
+	}
 }
 
 
@@ -73,7 +93,7 @@ void Huffman::count(char *a, size_t n) {
 uint32_t Huffman::get_rem() {
 	uint lens = 0;
     for (size_t i = 0; i < 256; i++)
-        lens += cnt[i] * t[i].size();
+        lens += cnt[i] * tlen[i];
     lens %= 8;
     if (lens > 0)
 		lens = 8 - lens;
@@ -95,7 +115,7 @@ void Huffman::encode_tree(char* output, size_t &m) {
     for (size_t i = 0; i < 256; i++) {
 		uint w = cnt[i];
 		if (w >= flag)
-			error("some character appears more than " + std::to_string(flag) + " times");
+			error("character with code " + std::to_string(i) + " appears more than " + std::to_string(flag) + " times");
 		if (w == 0) {
 			print(big);
 			continue;
@@ -111,7 +131,7 @@ void Huffman::encode_tree(char* output, size_t &m) {
 
 void Huffman::encode(char *input, size_t n, char* output, size_t &m) {
 	m = 0;
-	
+
 	auto print = [&](char w) {
 		assert(m < OSZ);
 		output[m++] = w;
@@ -119,17 +139,20 @@ void Huffman::encode(char *input, size_t n, char* output, size_t &m) {
 
 	for (size_t iter = 0; iter != n; iter++) {
         uchar w = input[iter];
-		srem += t[w];
-		if (srem.size() >= 8) {
-			size_t i = 0;
-			for (; i + 7 < srem.size(); i += 8) {
-				char v = 0;
-				for (size_t j = i; j < i + 8; j++) {
-					v = (v << 1) ^ (srem[j] & 1);
-				}
-				print(v);
-			}
-			srem = srem.substr(i, srem.size() - i);
+		uchar dlen = tlen[w] >> 3;
+		for (size_t i = 0; i < dlen; i++) {
+			print(srem ^ (t[w][i] >> rlen));
+			srem = t[w][i] << (8 - rlen);
+		}
+		uchar last = t[w][dlen];
+		dlen = tlen[w] & 7;
+		if (rlen + dlen >= 8) {
+			print(srem ^ (last >> rlen));
+			srem = last << (8 - rlen);
+			rlen += dlen - 8;
+		} else {
+			srem ^= last >> rlen;
+			rlen += dlen;
 		}
     }
 }
@@ -137,26 +160,12 @@ void Huffman::encode(char *input, size_t n, char* output, size_t &m) {
 void Huffman::encode_fin(char* a, size_t &n) {
 	n = 0;
 	uint rem = get_rem();
-	if (rem > 0) {
-        uchar c = 0;
-        for (size_t j = 0; j < 8 - rem; j++)
-            c = (c << 1) ^ (srem[j] & 1);
-		a[n++] = char(c << rem);
-    }
-    srem = "";   
-	for (size_t i = 0; i < SZ; i++)
-		t[i] = "";
-	memset(cnt, 0, sizeof(cnt));
-}
-
-std::string Huffman::bits(char w) {
-    std::string s;
-    for (size_t i = 0; i < 8; i++) {
-        s.push_back(48 + (w & 1));
-        w >>= 1;
-    }
-    std::reverse(s.begin(), s.end());
-    return s;
+	if (rem > 0)
+		a[n++] = char(srem);
+	srem = rlen = 0;
+	cur_v = 0;
+	memset(t, 0, sizeof(t));
+	memset(tlen, 0, sizeof(tlen));
 }
 
 void Huffman::decode_tree(char *input, size_t n, char* output, size_t &m) {
@@ -193,16 +202,17 @@ void Huffman::decode_tree(char *input, size_t n, char* output, size_t &m) {
 
 	for (size_t it = 0; it < SZ; it++) {
 		size_t w = 0;
-		for (char c : t[it]) {
-			c -= 48;
+		for (size_t i = 0; i < tlen[it]; i++) {
+			bool c = !!(t[it][i >> 3] & (1 << ((i & 7) ^ 7)));
 			if (e[w][c] == 0)
 				e[w][c] = sz++;
 			w = e[w][c];
 		}
+		if (e[w][0] != 0 || e[w][1] != 0)
+			error("couldn't make huffman tree");
 		e[w][0] = e[w][1] = -1 - it;
 	}
-    
-    
+        
     cur_v = 0;
 
     uint dec_rem = read();
@@ -223,7 +233,7 @@ void Huffman::decode(char *input, size_t n, char* output, size_t &m) {
 
 	uint &v = cur_v;
 
-	auto go = [&](size_t o) {
+	auto go = [&](bool o) {
 		if (e[v][o] < 0) {
 			print(uchar(-e[v][o] - 1));
 			v = 0;
@@ -236,13 +246,14 @@ void Huffman::decode(char *input, size_t n, char* output, size_t &m) {
 	uint dec_rem = get_rem();
 
     for (size_t iter = 0; iter != n; iter++) {
-		if (!srem.empty()) {
+		if (rlen > 0) {
 			for (size_t i = 8 - dec_rem; i < 8; i++)
-				go(srem[i] - 48);
+				go(!!(srem & (1 << (i ^ 7))));
 		}
-		srem = bits(input[iter]);
+		srem = input[iter];
+		rlen = 8;
 		for (size_t i = 0; i < 8 - dec_rem; i++)
-			go(srem[i] - 48);
+			go(!!(srem & (1 << (7 ^ i))));
     }
 
 }

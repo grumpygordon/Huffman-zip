@@ -4,26 +4,22 @@
 #include <string>
 #include <vector>
 
-typedef unsigned char uchar;
-
-typedef uint32_t uint;
-
 class Huffman {
 private:
 
-	static const size_t SZ = 256;
+	static const size_t SZ = 256, TSZ = 32;
 	
 	uint32_t cnt[SZ], cur_v;
 	
 	int32_t e[2 * SZ][2];
 
-	std::string t[SZ], srem;
+	unsigned char t[SZ][TSZ], srem, rlen;
+	
+	size_t tlen[SZ];
 
 	uint32_t get_rem();
 
-	std::string bits(char a);
-	
-	void concat(std::vector<uchar> &a, std::vector<uchar> &b);
+	void concat(std::vector<unsigned char> &a, std::vector<unsigned char> &b);
 public:
 
 	static const size_t OSZ = 16384, ISZ = 2048;

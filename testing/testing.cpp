@@ -95,9 +95,10 @@ void test() {
     std::cerr << std::setprecision(2);
     auto stime = clock();
 
+	run_test([](std::ofstream &fout) { fout << "abcd"; }, true);
     run_test([](std::ofstream &fout) {}, true);
 	run_test([](std::ofstream &fout) { fout << "a"; }, true);
-	run_test([](std::ofstream &fout) { fout << "a"; }, true);
+	run_test([](std::ofstream &fout) { fout << "aa"; }, true);
 	run_test([](std::ofstream &fout) { fout << "aaa"; }, true);
 	run_test([](std::ofstream &fout) { fout << "abacabadabacaba"; }, true);
 	run_test([](std::ofstream &fout) { for (size_t i = 0; i < 26; i++) fout << char('a' + i); }, true);

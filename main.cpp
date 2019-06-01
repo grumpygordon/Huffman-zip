@@ -2,7 +2,7 @@
 #include <fstream>
 #include <cstring>
 #include <ctime>
-#include "compress_testing.h"
+#include "testing/testing.h"
 #include "utility/utility.h"
 
 int main(int argc, char *argv[]) {
@@ -12,6 +12,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Modes:\n";
         std::cout << "-c    Compress file\n";
         std::cout << "-d    Decompress file\n";
+        std::cout << "-test for testing(without file names)\n";
         return 0;
     } else if (argc == 2 && strcmp(argv[1], "-test") == 0) {
         test();

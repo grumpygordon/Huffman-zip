@@ -5,47 +5,40 @@
 #include <vector>
 
 class Huffman {
+
 private:
+	
+	void concat(std::vector<unsigned char> &a, std::vector<unsigned char> const &b) const;
+
+protected:
 
 	static const size_t SZ = 256, TSZ = 32;
 	
-	uint32_t cnt[SZ], cur_v;
+	uint32_t cnt[SZ];
+
+	unsigned char srem, grem;
 	
-	int32_t e[2 * SZ][2];
+	int32_t stage;
 
-	unsigned char t[SZ][TSZ], srem, rlen;
+	std::string const s_err;
+
+	void bad_stage(int32_t stg) const;
+
+	void make_huffman_codes(unsigned char t[SZ][TSZ], size_t tlen[SZ]);
 	
-	size_t tlen[SZ];
-
-	uint32_t get_rem();
-
-	void concat(std::vector<unsigned char> &a, std::vector<unsigned char> &b);
 public:
 
 	static const size_t OSZ = 16384, ISZ = 2048;
 
-	Huffman();
+	Huffman(std::string const &s);
 	
 	~Huffman();
+	
+	void error(std::string const &s) const;
+	
+	//virtual void code(char const *in, size_t n, char *out, size_t &m) = 0;
 
-	void error (std::string s);
-
-	void get_codes();
-	
-	void count(char *a, size_t n);
-	
-	void encode_tree(char* a, size_t &n);
-	
-	void encode(char *a, size_t n, char* b, size_t &m);
-
-	void encode_fin(char* a, size_t &n);
-	
-	void decode_tree(char *a, size_t n, char* b, size_t &m);
-	
-	void decode(char *a, size_t n, char* b, size_t &m);
-	
-	void decode_fin(char* a, size_t &n);
-
+	//virtual void code_fin(char *out, size_t &n) = 0;
 };
 
 #endif //HUFFMAN_LIB_H

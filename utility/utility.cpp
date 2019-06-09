@@ -1,9 +1,8 @@
 #include "utility.h"
-#include "../lib/huffman_lib.h"
-#include <cstdio>
-#include <fstream>
+#include "../lib/huffman_encoder.h"
+#include "../lib/huffman_decoder.h"
 
-Huffman_utility::Huffman_utility(char const *in, char const *out) : fin(in), fout(out) {}
+Huffman_utility::Huffman_utility(char const *in, char const *out) : fin(in, std::ios::binary), fout(out, std::ios::binary) {}
 
 Huffman_utility::~Huffman_utility() {
 	fin.close();
@@ -11,7 +10,7 @@ Huffman_utility::~Huffman_utility() {
 }
 
 void Huffman_utility::encode() {
-	Huffman q;
+	Huffman_encoder q;
     if (fin.fail()) {
         q.error("couldn't open input file");
 	}
@@ -25,40 +24,42 @@ void Huffman_utility::encode() {
 		if (fout.fail())
 			q.error("couldn't write to output file");
 	};
-	while (fin) {
+	auto read_block = [&]() {
 		fin.read(a, sizeof(a));
 		if (fin.fail() && !fin.eof())
 			q.error("couldn't read from input file");
+	};
+	while (fin) {
+		read_block();
 		n = fin.gcount();
 		if (n == 0)
 			break;
 		q.count(a, n);
 	}
-	q.make_codes();
+	q.make_huffman_codes();
 
     fin.clear();
     fin.seekg(0, std::ios::beg);
-
-	q.encode_tree(b, m);
+	if (fin.fail())
+		q.error("couldn't reset input file");
+	q.code_tree(b, m);
 	print();
-	while (1) {
-		fin.read(a, sizeof(a));
-		if (fin.fail() && !fin.eof())
-			q.error("couldn't read from input file");
+	while (fin) {
+		read_block();
 		n = fin.gcount();
 		if (n == 0)
 			break;
-		q.encode(a, n, b, m);
+		q.code(a, n, b, m);
 		print();
 	}
-	q.encode_fin(b, m);
+	q.code_fin(b, m);
 	print();
 	fin.close();
 	fout.close();
 }
 
 void Huffman_utility::decode() {
-	Huffman q;
+	Huffman_decoder q;
     if (fin.fail()) {
         q.error("couldn't open input file");
 	}
@@ -72,23 +73,28 @@ void Huffman_utility::decode() {
 		if (fout.fail())
 			q.error("couldn't write to output file");
 	};
-	bool st = 0;
-	while (fin) {
+	auto read_block = [&]() {
 		fin.read(a, sizeof(a));
 		if (fin.fail() && !fin.eof())
 			q.error("couldn't read from input file");
+	};
+	bool st = false;
+	while (fin) {
+		read_block();
 		n = fin.gcount();
 		if (n == 0)
 			break;
 		if (!st) {
-			q.decode_tree(a, n, b, m);
-			st = 1;
+			q.code_tree(a, n, b, m);
+			st = true;
 		} else {
-			q.decode(a, n, b, m);
+			q.code(a, n, b, m);
 		}
 		print();
 	}
-	q.decode_fin(b, m);
+	if (!st)
+		q.error("file is empty, frequencies expected");
+	q.code_fin(b, m);
 	print();
 	fin.close();
 	fout.close();

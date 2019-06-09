@@ -7,12 +7,12 @@
 
 int main(int argc, char *argv[]) {
     if (argc == 2 && strcmp(argv[1], "--help") == 0) {
-        std::cout << "Сonsole utility for compressing/decopressing files using Huffman coding\n";
+        std::cout << "Сonsole utility for compressing/decompressing files using Huffman coding\n";
         std::cout << "Usage: <mode> <input file> <output file>\n";
         std::cout << "Modes:\n";
         std::cout << "-c    Compress file\n";
         std::cout << "-d    Decompress file\n";
-        std::cout << "-test for testing(without file names)\n";
+        std::cout << "-test for testing on custom tests(without file names)\n";
         return 0;
     } else if (argc == 2 && strcmp(argv[1], "-test") == 0) {
         test();
@@ -35,10 +35,11 @@ int main(int argc, char *argv[]) {
     auto start_time = clock();
 
     try {
+		Huffman_utility hf(argv[2], argv[3]);
         if (mode == 1) {
-            encode(argv[2], argv[3]);
+			hf.encode();
         } else {
-            decode(argv[2], argv[3]);
+			hf.decode();
         }
     } catch (const std::exception &ex) {
         std::cout << ex.what();

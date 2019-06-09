@@ -29,8 +29,8 @@ void large_verdict(bool answ, double ftime) {
     all_time += ftime;
     if (answ) {
 		ac++;
-        std::ifstream f1(input, std::ios::binary | std::ios::ate);
-        std::ifstream f2(tmp, std::ios::binary | std::ios::ate);
+        std::ifstream f1(input, std::ios::ate);
+        std::ifstream f2(tmp, std::ios::ate);
 
         double cur = f2.tellg() * 1.0 / 1024;
         double prev = f1.tellg() * 1.0 / 1024;
@@ -50,8 +50,19 @@ bool check_test(bool small = false) {
 
     auto start_time = clock();
 
-    encode(input, tmp);
-    decode(tmp, res);
+	double x1 = clock();
+
+	Huffman_utility enc(input, tmp);
+
+    enc.encode();
+
+	double x2 = clock();
+
+	Huffman_utility dec(tmp, res);
+	
+    dec.decode();
+
+	double x3 = clock();
 
     double test_time = (clock() - start_time);
     std::ifstream fin(res);
@@ -75,6 +86,8 @@ bool check_test(bool small = false) {
     } else {
         large_verdict(answ, test_time);
     }
+
+	std::cout << "Compressing in " << (x2 - x1) / CLOCKS_PER_SEC << "\nDecompressing in " << (x3 - x2) / CLOCKS_PER_SEC << '\n';
 
     return answ;
 }
@@ -151,7 +164,7 @@ void test() {
         }
     });
 	run_test([](std::ofstream &fout) {
-        for (size_t i = 0; i < 1000000; i++) {
+        for (size_t i = 0; i < 10000000; i++) {
             fout << (char) (rand() % 256);
         }
     });

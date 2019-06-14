@@ -2,23 +2,24 @@
 #define HUFFMAN_DECODER_H
 
 #include "huffman_lib.h"
+#include "huffman_tree.h"
 
 class Huffman_decoder : public Huffman {
 private:
 
 	const size_t threshold;
 
-	int16_t cur_v, e[2 * SZ][2], *q;
-	
-	std::vector<std::vector<unsigned char> > qv;
+	huffman_tree *root, *cur_v;
 
 	bool rlen, big;
 
 public:
 
 	Huffman_decoder();
+
+	Huffman_decoder(const bool bg);
 	
-	Huffman_decoder(size_t w);
+	Huffman_decoder(const size_t w, const bool bg);
 	
 	~Huffman_decoder();
 	

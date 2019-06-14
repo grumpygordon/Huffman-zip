@@ -5,10 +5,10 @@ class Huffman_utility {
 private:
 	std::ifstream fin;
 	std::ofstream fout;
-
+	const bool big;
 public:
 
-	Huffman_utility(char const *in, char const *out);
+	Huffman_utility(char const *in, char const *out, const bool bg);
 
 	~Huffman_utility();
 

@@ -2,7 +2,8 @@
 #include "../lib/huffman_encoder.h"
 #include "../lib/huffman_decoder.h"
 
-Huffman_utility::Huffman_utility(char const *in, char const *out) : fin(in, std::ios::binary), fout(out, std::ios::binary) {}
+Huffman_utility::Huffman_utility(char const *in, char const *out, bool const bg) : 
+	fin(in, std::ios::binary), fout(out, std::ios::binary), big(bg) {}
 
 Huffman_utility::~Huffman_utility() {
 	fin.close();
@@ -59,7 +60,7 @@ void Huffman_utility::encode() {
 }
 
 void Huffman_utility::decode() {
-	Huffman_decoder q;
+	Huffman_decoder q(big);
     if (fin.fail()) {
         q.error("couldn't open input file");
 	}

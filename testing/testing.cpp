@@ -29,8 +29,8 @@ void large_verdict(bool answ, double ftime) {
     all_time += ftime;
     if (answ) {
 		ac++;
-        std::ifstream f1(input, std::ios::ate);
-        std::ifstream f2(tmp, std::ios::ate);
+        std::ifstream f1(input, std::ios::ate | std::ios::binary);
+        std::ifstream f2(tmp, std::ios::ate | std::ios::binary);
 
         double cur = f2.tellg() * 1.0 / 1024;
         double prev = f1.tellg() * 1.0 / 1024;
@@ -39,9 +39,6 @@ void large_verdict(bool answ, double ftime) {
         std::cerr << cur << " Kb / " << prev << " Kb\n";
     } else {
         std::cerr << "[FAILED] Test #" << test_num << "\n";
-        std::cerr << "Passed " << test_num - ac - 1 << " large tests in \n" << std::fixed
-                  << all_time / CLOCKS_PER_SEC
-                  << " sec.\n";
     }
 }
 
@@ -52,13 +49,13 @@ bool check_test(bool small = false) {
 
 	double x1 = clock();
 
-	Huffman_utility enc(input, tmp);
+	Huffman_utility enc(input, tmp, false);
 
     enc.encode();
 
 	double x2 = clock();
 
-	Huffman_utility dec(tmp, res);
+	Huffman_utility dec(tmp, res, false);
 	
     dec.decode();
 
@@ -87,7 +84,7 @@ bool check_test(bool small = false) {
         large_verdict(answ, test_time);
     }
 
-	std::cout << "Compressing in " << (x2 - x1) / CLOCKS_PER_SEC << "\nDecompressing in " << (x3 - x2) / CLOCKS_PER_SEC << '\n';
+	std::cout << "Compressed in " << (x2 - x1) / CLOCKS_PER_SEC << "\nDecompressed in " << (x3 - x2) / CLOCKS_PER_SEC << '\n';
 
     return answ;
 }
@@ -108,11 +105,11 @@ void test() {
     std::cerr << std::setprecision(2);
     auto stime = clock();
 
-	run_test([](std::ofstream &fout) { fout << "abcd"; }, true);
     run_test([](std::ofstream &fout) {}, true);
 	run_test([](std::ofstream &fout) { fout << "a"; }, true);
 	run_test([](std::ofstream &fout) { fout << "aa"; }, true);
 	run_test([](std::ofstream &fout) { fout << "aaa"; }, true);
+	run_test([](std::ofstream &fout) { fout << "abcd"; }, true);
 	run_test([](std::ofstream &fout) { fout << "abacabadabacaba"; }, true);
 	run_test([](std::ofstream &fout) { for (size_t i = 0; i < 26; i++) fout << char('a' + i); }, true);
 	run_test([](std::ofstream &fout) { for (size_t i = 0; i < 256; i++) fout << char(i); }, true);
@@ -168,7 +165,8 @@ void test() {
             fout << (char) (rand() % 256);
         }
     });
-    std::cerr << "All " << test_num << " tests passed.\n";
+    if (ac == test_num)
+		std::cerr << "All " << test_num << " tests passed.\n";
     std::cerr << "Compressor worked (summary): " << all_time / CLOCKS_PER_SEC << " seconds\n";
     std::cerr << "Tests checked in " << std::fixed
               << (double) (clock() - stime) / CLOCKS_PER_SEC << " seconds\n";

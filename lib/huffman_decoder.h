@@ -9,7 +9,7 @@ private:
 
 	const size_t threshold;
 
-	huffman_tree *root, *cur_v;
+	Huffman_tree *root, *cur_v;
 
 	bool rlen, big;
 

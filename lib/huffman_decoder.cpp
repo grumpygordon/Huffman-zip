@@ -10,7 +10,7 @@ Huffman_decoder::Huffman_decoder() : Huffman_decoder(false) {}
 Huffman_decoder::Huffman_decoder(const bool bg) : Huffman_decoder(200000000, bg) {}
 
 Huffman_decoder::Huffman_decoder(size_t w, const bool bg) : 
-	Huffman("decode"), threshold(w), root(new huffman_tree()), cur_v(nullptr), rlen(false), big(bg) {}
+	Huffman("decode"), threshold(w), root(new Huffman_tree()), cur_v(nullptr), rlen(false), big(bg) {}
 
 Huffman_decoder::~Huffman_decoder() {
 	delete root;
@@ -53,7 +53,7 @@ void Huffman_decoder::code_tree(char const *input, size_t n, char* output, size_
 		for (size_t i = 0; i < tlen[it]; i++) {
 			bool c = !!(t[it][i >> 3] & (1 << ((i & 7) ^ 7)));
 			if (cur_v->e[c] == nullptr)
-				cur_v->e[c] = new huffman_tree;
+				cur_v->e[c] = new Huffman_tree;
 			cur_v = cur_v->e[c];
 		}
 		if (cur_v->e[0] != nullptr || cur_v->e[1] != nullptr || cur_v->t)

@@ -1,5 +1,6 @@
 #include "huffman_tree.h"
 #include <cstdlib>
+#include <cstddef>
 Huffman_tree::Huffman_tree() : e(), t(false), c() {}
 Huffman_tree::~Huffman_tree() {
 	for (int i = 0; i < 2; i++)

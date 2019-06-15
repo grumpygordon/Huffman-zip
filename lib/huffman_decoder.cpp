@@ -4,7 +4,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <cassert>
-
+#include <cstddef>
 Huffman_decoder::Huffman_decoder() : Huffman_decoder(false) {}
 
 Huffman_decoder::Huffman_decoder(const bool bg) : Huffman_decoder(200000000, bg) {}

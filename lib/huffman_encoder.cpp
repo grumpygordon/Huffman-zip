@@ -4,6 +4,8 @@
 #include <cstring>
 #include <stdexcept>
 #include <cassert>
+#include <cstdlib>
+#include <cstddef>
 
 Huffman_encoder::Huffman_encoder() : Huffman("encode"), t(), rlen(0), tlen() {}
 

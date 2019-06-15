@@ -3,6 +3,7 @@
 
 #include "huffman_lib.h"
 #include "huffman_tree.h"
+#include <cstdlib>
 
 class Huffman_decoder : public Huffman {
 private:

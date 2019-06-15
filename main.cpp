@@ -3,8 +3,8 @@
 #include <cstring>
 #include <ctime>
 #include "testing/testing.h"
-#include "utility/utility.h"
-
+#include "utility/decoder.h"
+#include "utility/encoder.h"
 int main(int argc, char *argv[]) {
 	bool mode = false, big = false;
     if (argc == 2 && strcmp(argv[1], "--help") == 0) {
@@ -38,10 +38,11 @@ int main(int argc, char *argv[]) {
     double start_time = clock();
 
     try {
-		Huffman_utility hf(argv[2 + size_t(big)], argv[3 + size_t(big)], big);
-        if (mode) {
-			hf.decode();
+		if (mode) {
+			Decoder hf(argv[2 + size_t(big)], argv[3 + size_t(big)], big);
+        	hf.decode();
         } else {
+			Encoder hf(argv[2], argv[3]);
 			hf.encode();
         }
     } catch (const std::exception &ex) {

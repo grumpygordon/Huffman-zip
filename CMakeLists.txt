@@ -17,9 +17,7 @@ add_executable(huflib main.cpp
         lib/huffman_encoder.cpp
         lib/huffman_decoder.h
         lib/huffman_decoder.cpp
-        utility/decoder.h
-        utility/decoder.cpp
-        utility/encoder.h
-        utility/encoder.cpp
+        utility/utility.h
+        utility/utility.cpp
         testing/testing.h
         testing/testing.cpp)

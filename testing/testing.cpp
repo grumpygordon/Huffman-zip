@@ -7,8 +7,7 @@
 #include <vector>
 #include <functional>
 #include "testing.h"
-#include "../utility/decoder.h"
-#include "../utility/encoder.h"
+#include "../utility/utility.h"
 
 char *input = (char *) ("input.txt");
 char *tmp = (char *) ("compressed.txt");
@@ -50,16 +49,12 @@ bool check_test(bool small = false) {
 
 	double x1 = clock();
 
-	Encoder enc(input, tmp);
-
-    enc.encode();
+    encode(input, tmp);
 
 	double x2 = clock();
 
-	Decoder dec(tmp, res, false);
+	decode(tmp, res, false);
 	
-    dec.decode();
-
 	double x3 = clock();
 
     double test_time = (clock() - start_time);

@@ -3,8 +3,7 @@
 #include <cstring>
 #include <ctime>
 #include "testing/testing.h"
-#include "utility/decoder.h"
-#include "utility/encoder.h"
+#include "utility/utility.h"
 int main(int argc, char *argv[]) {
 	bool mode = false, big = false;
     if (argc == 2 && strcmp(argv[1], "--help") == 0) {
@@ -39,11 +38,9 @@ int main(int argc, char *argv[]) {
 
     try {
 		if (mode) {
-			Decoder hf(argv[2 + size_t(big)], argv[3 + size_t(big)], big);
-        	hf.decode();
+        	decode(argv[2 + size_t(big)], argv[3 + size_t(big)], big);
         } else {
-			Encoder hf(argv[2], argv[3]);
-			hf.encode();
+			encode(argv[2], argv[3]);
         }
     } catch (const std::exception &ex) {
         std::cout << ex.what();
